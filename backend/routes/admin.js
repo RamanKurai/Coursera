@@ -1,9 +1,14 @@
 const { Router } = require("express");
 const { adminModel } = require("../db");
+const express = require("express")
 const { z } = require("zod");
 const { JWT_ADMIN_SECRET } = require("../../config");
+const jwt = require("jsonwebtoken")
+const bcrypt = require("bcrypt");
+
 
 const adminRouter = Router();
+adminRouter.use(express.json())
 
 adminRouter.post("/signup", async (req, res) => {
   const requiredBody = z.object({
@@ -24,17 +29,19 @@ adminRouter.post("/signup", async (req, res) => {
   if (!parsedDataWithSuccess.success) {
     return res.status(403).json({
       message: "Incorrect format",
+      error : parsedDataWithSuccess.error.errors
     });
   }
 
   const { email, password, firstName, lastName } = req.body;
   try {
     const hashedpassword = await bcrypt.hash(password, 5);
+    console.log(hashedpassword)
     await adminModel.create({
-      email: email,
+      email,
       password: hashedpassword,
-      firstName: firstName,
-      lastName: lastName,
+      firstName,
+      lastName
     });
     res.json({
       message: "You are Signed Up",
@@ -50,7 +57,7 @@ adminRouter.post("/signin", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await adminModel.create({
+    const user = await adminModel.findOne({
       email: email,
     });
     if (!user) {
