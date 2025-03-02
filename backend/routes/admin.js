@@ -1,10 +1,11 @@
 const { Router } = require("express");
-const { adminModel } = require("../db");
+const { adminModel, courseModel } = require("../db");
 const express = require("express")
 const { z } = require("zod");
 const { JWT_ADMIN_SECRET } = require("../../config");
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcrypt");
+const { adminMiddleware } = require("../middleware/admin");
 
 
 const adminRouter = Router();
@@ -90,22 +91,31 @@ adminRouter.post("/signin", async (req, res) => {
   } catch (error) {}
 });
 
-adminRouter.post("/course", (req, res) => {
-  res.json({
-    message: "",
-  });
+adminRouter.post("/course", adminMiddleware, async (req, res) => {
+  const adminId = req.userId; 
+
+  const { title, description, price, imageUrl} = req.body
+
+  const course = await courseModel.create({
+    title : title,
+    description : description,
+    price: price,
+    imageUrl : imageUrl,
+    creatorId : adminId
+  })
+
+ res.json({
+  message :"Course Created",
+  courseId : course._id
+ })
 });
 
-adminRouter.put("/course", (req, res) => {
-  res.json({
-    message: "",
-  });
+adminRouter.put("/course", adminMiddleware ,(req, res) => {
+  
 });
 
-adminRouter.get("/course/bulk", (req, res) => {
-  res.json({
-    message: "",
-  });
+adminRouter.get("/course/bulk", adminMiddleware,  (req, res) => {
+ 
 });
 
 module.exports = {
