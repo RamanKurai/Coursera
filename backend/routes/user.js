@@ -1,6 +1,6 @@
 const express = require("express");
 const { Router } = require("express");
-const { userModel } = require("../db");
+const { userModel, purchaseModel, courseModel } = require("../db");
 const { z } = require("zod");
 const { JWT_USER_SECRET } = require("../../config");
 const { userMiddleware } = require("../middleware/user");
@@ -12,7 +12,7 @@ userRouter.use(express.json());
 
 userRouter.post("/signup", async (req, res) => {
   const requiredbody = z.object({
-    email: z.string().email().min(3).max(100), // FIXED EMAIL VALIDATION
+    email: z.string().email().min(3).max(100),
     password: z
       .string()
       .min(3)
@@ -59,7 +59,7 @@ userRouter.post("/signin", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await userModel.findOne({ email }); // FIXED: Changed `find()` to `findOne()`
+    const user = await userModel.findOne({ email }); 
 
     if (!user) {
       return res.status(403).json({ message: "Invalid Credentials" });
@@ -81,11 +81,21 @@ userRouter.post("/signin", async (req, res) => {
   }
 });
 
-userRouter.get("/purchases", userMiddleware, (req, res) => {
+userRouter.get("/purchases", userMiddleware, async (req, res) => {
   const userId = req.userId;
+  
+
+  const purchases = await purchaseModel.find(({
+    userId
+  }))
+
+  const coursesData = await courseModel.find({
+    _id : {$in : purchases.map (x => x.courseId )}
+  })
 
   res.json({
-    message: `User ${userId} purchases retrieved successfully.`,
+    purchases,
+    coursesData
   });
 });
 
